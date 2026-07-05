@@ -1,0 +1,378 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>雪域之声 - 藏族音乐播放器</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Ma+Shan+Zheng&family=Noto+Sans+Tibetan:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsmediatags/3.9.5/jsmediatags.min.js"></script>
+<style>
+:root{--tr:#8B1A1A;--tg:#D4A017;--tb:#1E4D8C;--td:#0D2137;--tw:#F5F0E8;--to:#CC5500}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{overflow-x:hidden;width:100%;min-height:100vh}
+body{font-family:'Noto Serif SC',serif;color:var(--tw)}
+.bg-wrap{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-2;overflow:hidden}
+.bg-img{width:100%;height:100%;object-fit:cover;filter:blur(4px) brightness(0.65) saturate(1.1);transform:scale(1.05)}
+.bg-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(13,33,55,0.2);z-index:-1}
+.pf{height:6px;background:linear-gradient(90deg,#fff 0%,#FF4500 12%,#FFD700 24%,#228B22 36%,#87CEEB 48%,#9370DB 60%,#FF69B4 72%,#fff 84%);position:fixed;top:0;width:100%;z-index:1000}
+.ac{padding:16px;padding-top:14px;max-width:1200px;margin:0 auto;width:100%}
+.hd{display:flex;align-items:center;justify-content:space-between;padding:10px 0 8px;flex-wrap:wrap;gap:10px}
+.hl{display:flex;align-items:center;gap:10px}
+.dw{width:42px;height:42px;border:2px solid var(--tg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--tg);animation:sp 25s linear infinite;background:rgba(212,160,23,.08);flex-shrink:0}
+@keyframes sp{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.hl h1{font-family:'Ma Shan Zheng',cursive;font-size:1.8rem;color:var(--tg);text-shadow:0 0 20px rgba(212,160,23,.4);letter-spacing:4px}
+.hl p{color:rgba(245,240,232,.5);font-size:.7rem;letter-spacing:2px}
+.sb{position:relative;display:flex;align-items:center;gap:6px}
+.sb input{width:180px;padding:8px 12px 8px 30px;border:1px solid rgba(212,160,23,.3);border-radius:20px;background:rgba(255,255,255,.07);color:var(--tw);font-family:inherit;font-size:.8rem;outline:none;transition:all .3s}
+.sb input::placeholder{color:rgba(245,240,232,.35)}
+.sb input:focus{border-color:var(--tg);background:rgba(255,255,255,.12);width:220px}
+.si{position:absolute;left:10px;color:var(--tg);font-size:.85rem;pointer-events:none}
+.sbtn{padding:8px 14px;border:none;border-radius:20px;background:linear-gradient(135deg,var(--tg),var(--to));color:var(--td);font-family:inherit;font-weight:600;font-size:.78rem;cursor:pointer;transition:all .2s;white-space:nowrap}
+.sbtn:hover{transform:scale(1.05);box-shadow:0 2px 10px rgba(212,160,23,.4)}
+.sr{position:absolute;top:100%;right:0;width:340px;max-height:60vh;background:rgba(10,25,45,.98);border:1px solid rgba(212,160,23,.3);border-radius:10px;overflow-y:auto;z-index:999;display:none;margin-top:6px;backdrop-filter:blur(12px)}
+.sr.show{display:block}
+.sr::-webkit-scrollbar{width:3px}
+.sr::-webkit-scrollbar-thumb{background:var(--tg);border-radius:2px}
+.sri{padding:10px 12px;cursor:pointer;transition:background .2s;border-bottom:1px solid rgba(212,160,23,.08);display:flex;align-items:center;gap:10px}
+.sri:hover{background:rgba(212,160,23,.12)}
+.sri:last-child{border-bottom:none}
+.srt{width:40px;height:40px;border-radius:6px;overflow:hidden;flex-shrink:0;background:rgba(212,160,23,.1)}
+.srt img{width:100%;height:100%;object-fit:cover}
+.srinf{flex:1;min-width:0}
+.srinf h4{font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srinf p{font-size:.68rem;color:rgba(245,240,232,.5);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srp2{width:30px;height:30px;border-radius:50%;border:none;background:rgba(212,160,23,.2);color:var(--tg);font-size:.8rem;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.srp2:hover{background:var(--tg);color:var(--td)}
+.srl{padding:20px;text-align:center;color:rgba(245,240,232,.5);font-size:.8rem}
+.dv{height:1px;background:linear-gradient(90deg,transparent,var(--tg),transparent);margin:0 0 12px;opacity:.3}
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;height:calc(100vh - 110px);min-height:400px}
+@media(max-width:800px){.main-grid{grid-template-columns:1fr;height:auto;min-height:auto}.hl h1{font-size:1.4rem}.sb input{width:140px}.sb input:focus{width:180px}.sr{width:calc(100vw - 32px);right:-8px}}
+.cd{background:rgba(20,50,80,.6);border:1px solid rgba(212,160,23,.22);border-radius:14px;padding:18px;backdrop-filter:blur(16px);position:relative;display:flex;flex-direction:column}
+.cd::before{content:'';position:absolute;top:4px;left:4px;right:4px;bottom:4px;border:1px solid rgba(212,160,23,.1);border-radius:10px;pointer-events:none}
+.player-section{align-items:center;overflow-y:auto}
+@media(max-width:800px){.player-section{max-height:55vh}}
+.vc{width:160px;height:160px;margin:0 auto 14px;border-radius:50%;background:linear-gradient(135deg,var(--tr),var(--tb));border:3px solid var(--tg);display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 30px rgba(212,160,23,.3);transition:all .5s ease;overflow:hidden;flex-shrink:0}
+.vc.playing{box-shadow:0 0 45px rgba(212,160,23,.5);animation:pu 2s ease-in-out infinite}
+@keyframes pu{0%,100%{transform:scale(1)}50%{transform:scale(1.02)}}
+.aai{width:100%;height:100%;object-fit:cover;border-radius:50%;display:none;position:absolute;top:0;left:0}
+.aai.vis{display:block}
+.tf{width:100%;height:100%;display:flex;align-items:center;justify-content:center;position:relative;z-index:1}
+.tf.hid{display:none}
+.tsv{width:130px;height:130px}
+.vz{position:absolute;top:0;left:0;width:100%;height:100%;border-radius:50%;z-index:2;pointer-events:none}
+.si2{margin-bottom:16px;text-align:center;width:100%}
+.si2 h2{font-family:'Ma Shan Zheng',cursive;font-size:1.6rem;color:var(--tg)}
+.si2 p{color:rgba(245,240,232,.5);margin-top:2px;font-size:.85rem}
+.pw{width:100%;margin-bottom:14px}
+.pt{width:100%;height:4px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer}
+.pf2{height:100%;background:linear-gradient(90deg,var(--tg),var(--to));border-radius:2px;width:0%;transition:width .1s linear}
+.ti{display:flex;justify-content:space-between;font-size:.7rem;color:rgba(245,240,232,.4);margin-top:5px}
+.ct2{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:14px}
+.cb{background:none;border:none;color:var(--tw);font-size:1.2rem;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.cb:hover{background:rgba(212,160,23,.15);color:var(--tg)}
+.cb.ac2{color:var(--tg)}
+.pm{width:52px;height:52px;font-size:1.5rem;background:linear-gradient(135deg,var(--tg),var(--to));color:var(--td);box-shadow:0 4px 16px rgba(212,160,23,.4)}
+.pm:hover{transform:scale(1.08);box-shadow:0 6px 20px rgba(212,160,23,.6)}
+.va{display:flex;align-items:center;justify-content:center;gap:6px}
+.vs{-webkit-appearance:none;width:80px;height:3px;background:rgba(255,255,255,.15);border-radius:2px;outline:none}
+.vs::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;background:var(--tg);border-radius:50%;cursor:pointer}
+.plist-section{margin-top:10px;width:100%}
+.plist-toggle{width:100%;padding:7px;border:none;border-radius:7px;background:rgba(212,160,23,.08);color:var(--tg);font-family:inherit;font-size:.78rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:5px}
+.plist-toggle:hover{background:rgba(212,160,23,.15)}
+.plist-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.plist-body.open{max-height:250px;overflow-y:auto}
+.plist-body::-webkit-scrollbar{width:3px}
+.plist-body::-webkit-scrollbar-thumb{background:var(--tg);border-radius:2px}
+.pl{list-style:none;padding-top:6px}
+.ti2{padding:6px 8px;border-radius:6px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;margin-bottom:2px;font-size:.75rem}
+.ti2:hover{background:rgba(212,160,23,.1)}
+.ti2.ac3{background:rgba(212,160,23,.18);border-left:3px solid var(--tg)}
+.tt{width:30px;height:30px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2px solid rgba(212,160,23,.3)}
+.tt img{width:100%;height:100%;object-fit:cover}
+.tt .tp{width:100%;height:100%;background:linear-gradient(135deg,var(--tr),var(--tb));display:flex;align-items:center;justify-content:center;font-size:8px;color:var(--tg);font-weight:700}
+.tn{width:16px;height:16px;border-radius:50%;background:rgba(212,160,23,.15);display:flex;align-items:center;justify-content:center;font-size:.6rem;color:var(--tg);flex-shrink:0}
+.ti2.ac3 .tn{background:var(--tg);color:var(--td)}
+.td2{flex:1;min-width:0}
+.td2 h4{font-size:.73rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.td2 p{font-size:.6rem;color:rgba(245,240,232,.4);margin-top:1px}
+.tl{font-size:.65rem;color:rgba(245,240,232,.3)}
+.trm{width:16px;height:16px;border-radius:50%;border:none;background:transparent;color:rgba(245,240,232,.2);font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.trm:hover{background:rgba(139,26,26,.5);color:#ff6b6b}
+.lsi{width:100%;padding:6px 8px;border:1px solid rgba(212,160,23,.2);border-radius:5px;background:rgba(255,255,255,.04);color:var(--tw);font-family:inherit;font-size:.73rem;outline:none;margin-bottom:5px}
+.lsi::placeholder{color:rgba(245,240,232,.3)}
+.lsi:focus{border-color:var(--tg)}
+.tg2{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.tg3{padding:3px 8px;border:1px solid rgba(212,160,23,.25);border-radius:10px;font-size:.65rem;cursor:pointer;transition:all .2s;background:transparent;color:var(--tw)}
+.tg3:hover,.tg3.ac4{background:var(--tg);color:var(--td);border-color:var(--tg)}
+.eh{text-align:center;padding:16px 10px;color:rgba(245,240,232,.3)}
+.eh .ic{font-size:1.5rem;margin-bottom:5px;opacity:.4}
+.eh p{font-size:.72rem;line-height:1.3}
+.em{background:rgba(139,26,26,.3);border:1px solid rgba(212,160,23,.3);border-radius:5px;padding:6px;text-align:center;font-size:.7rem;color:var(--tg);margin-top:6px;display:none}
+.lyrics-section{display:flex;flex-direction:column;overflow:hidden}
+.lyrics-title{font-family:'Ma Shan Zheng',cursive;font-size:1.1rem;color:var(--tg);margin-bottom:8px;flex-shrink:0}
+.lyrics-wrap{flex:1;overflow:hidden;position:relative;min-height:200px}
+.lyrics-mask-top{position:absolute;top:0;left:0;right:0;height:40px;background:linear-gradient(to bottom,rgba(20,50,80,.95),transparent);z-index:3;pointer-events:none}
+.lyrics-mask-bottom{position:absolute;bottom:0;left:0;right:0;height:40px;background:linear-gradient(to top,rgba(20,50,80,.95),transparent);z-index:3;pointer-events:none}
+.lyrics-scroll{width:100%;transition:transform .5s cubic-bezier(.25,.1,.25,1);text-align:center;padding:50px 14px}
+.lyric-line{padding:9px 10px;font-size:.88rem;color:rgba(245,240,232,.2);transition:all .4s ease;line-height:1.6;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lyric-line:hover{color:rgba(245,240,232,.4)}
+.lyric-line.prev,.lyric-line.next{color:rgba(245,240,232,.25)}
+.lyric-line.current{color:var(--tg);font-size:1.05rem;font-weight:600;text-shadow:0 0 10px rgba(212,160,23,.4)}
+.lyric-line.dim{color:rgba(245,240,232,.1)}
+.lyric-placeholder{color:rgba(245,240,232,.3);font-size:.85rem;text-align:center;line-height:2;padding:30px 16px}
+.lyric-time{font-size:.68rem;color:rgba(245,240,232,.3);margin-top:6px;text-align:center;flex-shrink:0}
+.lyric-source{font-size:.65rem;color:rgba(245,240,232,.2);text-align:center;margin-top:3px;flex-shrink:0}
+.ly-info{margin-top:10px;border-top:1px solid rgba(212,160,23,.12);padding-top:10px;flex-shrink:0}
+.sts{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.stb{text-align:center;padding:8px;background:rgba(212,160,23,.04);border-radius:6px}
+.stb .nm{font-family:'Ma Shan Zheng',cursive;font-size:1.1rem;color:var(--tg)}
+.stb .lb{font-size:.62rem;color:rgba(245,240,232,.4);margin-top:1px}
+.qb{margin-top:8px;padding:8px;background:rgba(212,160,23,.04);border-radius:6px;text-align:center}
+.qb .lb2{font-size:.68rem;color:var(--tg);margin-bottom:3px}
+.qb .tx{font-style:italic;color:rgba(245,240,232,.5);font-size:.75rem}
+.ua{margin-top:8px;padding:12px;border:2px dashed rgba(212,160,23,.2);border-radius:7px;text-align:center;cursor:pointer;transition:all .3s}
+.ua:hover{border-color:var(--tg);background:rgba(212,160,23,.04)}
+.ua p{color:rgba(245,240,232,.45);font-size:.72rem}
+.ua .ic{font-size:1.3rem;margin-bottom:3px}
+#fi{display:none}
+.ft{text-align:center;padding:16px;color:rgba(245,240,232,.25);font-size:.68rem;border-top:1px solid rgba(212,160,23,.08);margin-top:16px}
+.ft .ma{font-size:.85rem;color:var(--tg);letter-spacing:4px;margin-bottom:5px;opacity:.5}
+@media(max-width:800px){.main-grid{height:auto}.lyrics-wrap{min-height:250px;max-height:300px}.player-section{max-height:none;overflow:visible}}
+</style>
+</head>
+<body>
+<div class="bg-wrap"><img class="bg-img" src="bg.jpg" alt=""></div>
+<div class="bg-overlay"></div>
+<div class="pf"></div>
+<div class="ac">
+<header class="hd">
+<div class="hl"><div class="dw">&#9784;</div><div><h1>雪域之声</h1><p>聆听来自雪域高原的天籁之音</p></div></div>
+<div class="sb"><span class="si">&#128269;</span><input type="text" id="ks" placeholder="搜索音乐..." autocomplete="off"><button class="sbtn" id="sbn">搜索</button><div class="sr" id="srp"></div></div>
+</header>
+<div class="dv"></div>
+<div class="main-grid">
+<div class="cd player-section">
+<div class="vc" id="vb">
+<img class="aai" id="aa" alt="">
+<div class="tf" id="tf2"><svg class="tsv" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<circle cx="100" cy="100" r="92" fill="none" stroke="rgba(212,160,23,.4)" stroke-width="1.5"/>
+<circle cx="100" cy="100" r="85" fill="none" stroke="rgba(212,160,23,.2)" stroke-width=".8"/>
+<circle cx="100" cy="100" r="75" fill="rgba(139,26,26,.3)"/>
+<g fill="rgba(212,160,23,.5)" font-size="12"><text x="100" y="18" text-anchor="middle">&#9753;</text><text x="100" y="195" text-anchor="middle">&#9753;</text><text x="8" y="104" text-anchor="middle">&#9753;</text><text x="192" y="104" text-anchor="middle">&#9753;</text></g>
+<text x="100" y="78" text-anchor="middle" fill="#D4A017" font-family="'Noto Sans Tibetan',sans-serif" font-size="22" font-weight="700">&#x0F40;&#x0F74;&#x0F53;&#x0F0B;&#x0F51;&#x0F42;&#x0F62;&#x0F0B;</text>
+<text x="100" y="110" text-anchor="middle" fill="#D4A017" font-family="'Noto Sans Tibetan',sans-serif" font-size="22" font-weight="700">&#x0F58;&#x0F0B;&#x0F51;&#x0F42;&#x0F62;&#x0F0B;</text>
+<text x="100" y="140" text-anchor="middle" fill="rgba(245,240,232,.6)" font-family="'Noto Serif SC',serif" font-size="11">吉祥如意</text>
+<path d="M85,155 Q100,145 115,155 Q100,165 85,155Z" fill="rgba(212,160,23,.3)"/>
+</svg></div>
+<canvas class="vz" id="vz2"></canvas>
+</div>
+<div class="si2"><h2 id="tt2">请选择一首歌曲</h2><p id="ta2">雪域之声 · 藏族音乐</p></div>
+<div class="pw"><div class="pt" id="pt2"><div class="pf2" id="pf3"></div></div><div class="ti"><span id="tn2">0:00</span><span id="td3">0:00</span></div></div>
+<div class="ct2">
+<button class="cb" id="bp" title="上一首">&#9198;</button>
+<button class="cb pm" id="bpl" title="播放">&#9654;</button>
+<button class="cb" id="bn" title="下一首">&#9197;</button>
+</div>
+<div class="va"><span style="font-size:.8rem">&#128264;</span><input type="range" class="vs" id="vs2" min="0" max="100" value="80"><span style="font-size:.8rem">&#128266;</span></div>
+<div class="plist-section">
+<button class="plist-toggle" id="plToggle">&#9654; 播放列表 <span id="plCount">0</span> 首</button>
+<div class="plist-body" id="plBody">
+<input type="text" class="lsi" id="ls" placeholder="搜索歌曲...">
+<div class="tg2" id="tg4"><button class="tg3 ac4" data-c="all">全部</button><button class="tg3" data-c="online">在线</button><button class="tg3" data-c="local">本地</button></div>
+<ul class="pl" id="pl2"></ul>
+<div class="eh" id="eh2"><div class="ic">&#127926;</div><p>搜索音乐或上传本地文件</p></div>
+<div class="em" id="em2"></div>
+</div></div>
+</div>
+<div class="cd lyrics-section">
+<div class="lyrics-title" id="lyTitle">歌词</div>
+<div class="lyrics-wrap">
+<div class="lyrics-mask-top"></div>
+<div class="lyrics-scroll" id="lyScroll"></div>
+<div class="lyrics-mask-bottom"></div>
+</div>
+<div class="lyric-time" id="lyTime"></div>
+<div class="lyric-source" id="lySource"></div>
+<div class="ly-info">
+<div class="sts"><div class="stb"><div class="nm" id="stt">0</div><div class="lb">歌曲总数</div></div><div class="stb"><div class="nm" id="sto">0</div><div class="lb">在线歌曲</div></div></div>
+<div class="qb"><div class="lb2">每日一语</div><div class="tx" id="dq"></div></div>
+<div class="ua" id="ua2"><div class="ic">&#127926;</div><p>点击或拖拽上传本地音乐</p><p style="font-size:.6rem;margin-top:2px;color:rgba(245,240,232,.25)">支持 mp3 / wav / ogg / flac / m4a</p></div>
+<input type="file" id="fi" accept="audio/*" multiple>
+</div></div>
+</div>
+<footer class="ft"><div class="ma">&#x0F00; &#x0F58;&#x0F49;&#x0F72; &#x0F00; &#x0F54;&#x0F51;&#x0F0B;&#x0F54;&#x0F51;&#x0F0B; &#x0F51;&#x0F42;&#x0F60;&#x0F0B;</div><p>雪域之声 · 藏族音乐播放器</p></footer>
+</div>
+<audio id="ae" preload="auto"></audio>
+
+<script>
+(function(){
+var q=['心怀善念，所听皆是天籁','音乐是灵魂的桥梁，连接雪山与大海','在音符中感受雪域的纯净与辽阔','让歌声带你走进神秘的雪域高原','每一首歌都是一次灵魂的旅行','聆听高原的风声，感受生命的律动'];
+var tracks=[],ci=-1,isPlaying=false;
+var ae=document.getElementById('ae'),pl=document.getElementById('pl2'),tt=document.getElementById('tt2'),ta=document.getElementById('ta2');
+var vb=document.getElementById('vb'),aa=document.getElementById('aa'),tf=document.getElementById('tf2');
+var bpl=document.getElementById('bpl'),bp=document.getElementById('bp'),bn=document.getElementById('bn');
+var pt=document.getElementById('pt2'),pf=document.getElementById('pf3'),tn=document.getElementById('tn2'),td=document.getElementById('td3');
+var vs=document.getElementById('vs2'),ls=document.getElementById('ls'),tg=document.getElementById('tg4');
+var stt=document.getElementById('stt'),sto=document.getElementById('sto'),dq=document.getElementById('dq');
+var ua=document.getElementById('ua2'),fi=document.getElementById('fi'),em=document.getElementById('em2');
+var eh=document.getElementById('eh2'),vz=document.getElementById('vz2'),vx=vz.getContext('2d');
+var ks=document.getElementById('ks'),sbn=document.getElementById('sbn'),srp=document.getElementById('srp');
+var lyScroll=document.getElementById('lyScroll'),lyTime=document.getElementById('lyTime'),lySource=document.getElementById('lySource');
+var plToggle=document.getElementById('plToggle'),plBody=document.getElementById('plBody'),plCount=document.getElementById('plCount');
+var aCtx,anl,src,dArr,currentLyrics=[],currentLyricIdx=-1;
+
+function initAC(){if(aCtx)return;try{aCtx=new(window.AudioContext||window.webkitAudioContext)();anl=aCtx.createAnalyser();src=aCtx.createMediaElementSource(ae);src.connect(anl);anl.connect(aCtx.destination);anl.fftSize=256;dArr=new Uint8Array(anl.frequencyBinCount)}catch(e){}}
+function drawVz(){requestAnimationFrame(drawVz);if(!anl||!isPlaying){vx.clearRect(0,0,vz.width,vz.height);return}try{anl.getByteFrequencyData(dArr);var w=vz.width=vz.offsetWidth,h=vz.height=vz.offsetHeight;vx.clearRect(0,0,w,h);var bars=dArr.length,bw=(w/bars)*2.5,x=0;for(var i=0;i<bars;i++){var bh=(dArr[i]/255)*h*.5;var al=.3+(dArr[i]/255)*.7;vx.fillStyle='rgba(212,160,23,'+al+')';vx.fillRect(x,h/2-bh/2,bw,bh);x+=bw+1}}catch(e){}}
+drawVz();
+function exCov(f){return new Promise(function(r){if(typeof jsmediatags==='undefined'){r(null);return}jsmediatags.read(f,{onSuccess:function(t){var p=t.tags.picture;if(p){var b=new Uint8Array(p.data),bin='';for(var i=0;i<b.length;i++)bin+=String.fromCharCode(b[i]);r('data:'+p.format+';base64,'+window.btoa(bin))}else r(null)},onError:function(){r(null)}})})}
+function showAA(u){if(u){aa.src=u;aa.classList.add('vis');tf.classList.add('hid')}else{aa.classList.remove('vis');aa.src='';tf.classList.remove('hid')}}
+function fmtT(s){if(isNaN(s)||!isFinite(s))return'0:00';var m=Math.floor(s/60),sc=Math.floor(s%60);return m+':'+String(sc).padStart(2,'0')}
+
+function parseLRC(t){if(!t)return[];var lines=t.split('\n'),r=[],reg=/\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)/;for(var i=0;i<lines.length;i++){var m=lines[i].match(reg);if(m){var s=parseInt(m[1])*60+parseInt(m[2])+parseInt(m[3])/(m[3].length===2?100:1000);var txt=m[4].trim();if(txt)r.push({t:s,s:txt})}}return r.sort(function(a,b){return a.t-b.t})}
+
+function renderLyrics(ly){currentLyrics=ly||[];currentLyricIdx=-1;lyScroll.innerHTML='';if(!currentLyrics.length){lyScroll.innerHTML='<div class="lyric-placeholder">暂无歌词<br><span style="font-size:.75rem;opacity:.5">搜索歌曲自动获取歌词</span></div>';return}currentLyrics.forEach(function(l){var d=document.createElement('div');d.className='lyric-line';d.textContent=l.s;d.onclick=function(){if(l.t>=0){ae.currentTime=l.t;if(!isPlaying){playAudio()}}};lyScroll.appendChild(d)})}
+
+function updateLyricScroll(){if(!currentLyrics.length)return;var ct=ae.currentTime,idx=-1;for(var i=currentLyrics.length-1;i>=0;i--){if(ct>=currentLyrics[i].t){idx=i;break}}if(idx===currentLyricIdx)return;currentLyricIdx=idx;var lines=lyScroll.querySelectorAll('.lyric-line');lines.forEach(function(el,i){el.className='lyric-line';if(i===idx)el.classList.add('current');else if(Math.abs(i-idx)===1)el.classList.add(i<idx?'prev':'next');else if(Math.abs(i-idx)>1)el.classList.add('dim')});if(idx>=0&&lines[idx]){var wrapH=lyScroll.parentElement.offsetHeight;var scrollTarget=-(lines[idx].offsetTop-wrapH/2+lines[idx].offsetHeight/2);lyScroll.style.transform='translateY('+scrollTarget+'px)'}lyTime.textContent=fmtT(ct)+' / '+fmtT(ae.duration||0)}
+
+// 播放控制 - 修复逻辑
+function playAudio(){if(ci===-1||!tracks[ci])return;ae.play().then(function(){initAC();isPlaying=true;updPlayBtn();vb.classList.add('playing')}).catch(function(e){console.error(e)})}
+
+function pauseAudio(){ae.pause();isPlaying=false;updPlayBtn();vb.classList.remove('playing')}
+
+function togglePlay(){
+  if(ci===-1){if(tracks.length>0){playTrk(0)}return}
+  if(isPlaying){pauseAudio()}else{playAudio()}
+}
+
+function updPlayBtn(){bpl.innerHTML=isPlaying?'&#9646;&#9646;':'&#9654;'}
+
+// 网易云音乐搜索
+function searchMusic(kw){
+  if(!kw.trim()){srp.classList.remove('show');return}
+  srp.innerHTML='<div class="srl">搜索中...</div>';srp.classList.add('show');
+  
+  fetch('https://music.163.com/api/search/get/web?s='+encodeURIComponent(kw)+'&type=1&limit=15')
+  .then(function(r){return r.json()})
+  .then(function(data){
+    if(!data||data.code!==200||!data.result||!data.result.songs||data.result.songs.length===0){
+      srp.innerHTML='<div class="srl">未找到相关歌曲</div>';return}
+    srp.innerHTML='';
+    data.result.songs.forEach(function(song){
+      var d=document.createElement('div');d.className='sri';
+      var picUrl=song.album&&song.album.picUrl?song.album.picUrl:'';
+      var artistNames=song.artists.map(function(a){return a.name}).join('/');
+      var sn=(song.name||'').replace(/</g,'&lt;');
+      var ar=(artistNames||'').replace(/</g,'&lt;');
+      d.innerHTML='<div class="srt">'+(picUrl?'<img src="'+picUrl+'" alt="">':'<div style="width:100%;height:100%;background:linear-gradient(135deg,#8B1A1A,#1E4D8C);display:flex;align-items:center;justify-content:center;font-size:14px;color:#D4A017">&#9835;</div>')+'</div><div class="srinf"><h4>'+sn+'</h4><p>'+ar+'</p></div><button class="srp2" title="播放">&#9654;</button>';
+      d.onclick=function(){playNetEaseSong(song)};srp.appendChild(d);
+    });
+  })
+  .catch(function(e){srp.innerHTML='<div class="srl">搜索出错: '+e.message+'</div>'});
+}
+
+function playNetEaseSong(song){
+  var songId=song.id;
+  var artistNames=song.artists.map(function(a){return a.name}).join('/');
+  var picUrl=song.album&&song.album.picUrl?song.album.picUrl:'';
+  var duration=Math.floor(song.duration/1000);
+  
+  // 使用外链方式获取播放地址
+  var playUrl='https://music.163.com/song/media/outer/url?id='+songId+'.mp3';
+  
+  var track={
+    title:song.name||'未知歌曲',
+    artist:artistNames||'未知歌手',
+    cat:'online',
+    dur:fmtT(duration),
+    color:'#1E4D8C',
+    url:playUrl,
+    coverUrl:picUrl,
+    src:'netease',
+    songId:songId,
+    lyrics:[]
+  };
+  
+  tracks.push(track);
+  srp.classList.remove('show');
+  filtTracks();
+  playTrk(tracks.length-1);
+  
+  // 获取歌词
+  fetchLyrics(songId).then(function(lyrics){
+    if(lyrics.length>0){
+      track.lyrics=lyrics;
+      if(tracks.indexOf(track)===ci)renderLyrics(lyrics);
+      lySource.textContent='歌词来源: 网易云音乐';
+    }else{
+      lySource.textContent='暂无歌词';
+    }
+  });
+}
+
+async function fetchLyrics(songId){
+  try{
+    var resp=await fetch('https://music.163.com/api/song/lyric?id='+songId+'&lv=1');
+    var data=await resp.json();
+    if(data.lrc&&data.lrc.lyric){return parseLRC(data.lrc.lyric)}
+  }catch(e){console.error('获取歌词失败:',e)}
+  return[];
+}
+
+function renderL(){pl.innerHTML='';eh.style.display=tracks.length===0?'block':'none';plCount.textContent=tracks.length;
+filt.forEach(function(t){
+  var ri=tracks.indexOf(t),li=document.createElement('li');li.className='ti2'+(ri===ci?' ac3':'');
+  var th=t.coverUrl?'<img src="'+t.coverUrl+'" onerror="this.style.display=\'none\'" alt="">':'<div class="tp">&#9835;</div>';
+  li.innerHTML='<div class="tt">'+th+'</div><span class="tn">'+(ri+1)+'</span><div class="td2"><h4>'+t.title.replace(/</g,'&lt;')+'</h4><p>'+t.artist.replace(/</g,'&lt;')+'</p></div><span class="tl">'+t.dur+'</span><button class="trm" title="移除" data-i="'+ri+'">&times;</button>';
+  li.onclick=function(e){if(e.target.closest('.trm')){e.stopPropagation();rmTrk(parseInt(e.target.closest('.trm').dataset.i));return}playTrk(ri)};
+  pl.appendChild(li)});
+stt.textContent=tracks.length;sto.textContent=tracks.filter(function(t){return t.src==='netease'}).length}
+
+function rmTrk(i){if(i<0||i>=tracks.length)return;if(i===ci){pauseAudio();ae.src='';ci=-1;tt.textContent='请选择一首歌曲';ta.textContent='雪域之声 · 藏族音乐';showAA(null);renderLyrics([]);lyTime.textContent='';lySource.textContent=''}else if(i<ci)ci--;tracks.splice(i,1);filtTracks()}
+
+function playTrk(idx){if(idx<0||idx>=tracks.length)return;ci=idx;var t=tracks[idx];tt.textContent=t.title;ta.textContent=t.artist;vb.style.background='linear-gradient(135deg,'+t.color+',var(--tb))';showAA(t.coverUrl||null);
+if(t.url){ae.src=t.url;ae.load();playAudio()}else{em.style.display='block';em.textContent='此歌曲暂无音频';return}
+em.style.display='none';renderLyrics(t.lyrics&&t.lyrics.length?t.lyrics:[]);lySource.textContent=t.lyrics&&t.lyrics.length?'歌词来源: 网易云音乐':'暂无歌词';renderL()}
+
+function playNext(){if(!tracks.length)return;var i=(ci+1)%tracks.length;playTrk(i)}
+function playPrev(){if(!tracks.length)return;var i=ci-1;if(i<0)i=tracks.length-1;playTrk(i)}
+
+bpl.onclick=togglePlay;
+bn.onclick=playNext;
+bp.onclick=playPrev;
+
+ae.ontimeupdate=function(){if(!ae.duration)return;pf.style.width=(ae.currentTime/ae.duration*100)+'%';tn.textContent=fmtT(ae.currentTime);td.textContent=fmtT(ae.duration);updateLyricScroll()};
+ae.onended=function(){playNext()};
+ae.onerror=function(){em.style.display='block';em.textContent='音频加载失败，可能受版权限制';pauseAudio()};
+pt.onclick=function(e){if(!ae.duration)return;var r=pt.getBoundingClientRect();ae.currentTime=((e.clientX-r.left)/r.width)*ae.duration};
+vs.oninput=function(e){ae.volume=e.target.value/100};ae.volume=.8;
+
+ls.oninput=function(){filtTracks()};
+tg.onclick=function(e){if(!e.target.classList.contains('tg3'))return;document.querySelectorAll('.tg3').forEach(function(t){t.classList.remove('ac4')});e.target.classList.add('ac4');var cat=e.target.dataset.c;filtTracks()};
+function filtTracks(){var q2=ls.value.toLowerCase();filt=tracks.filter(function(t){var mc=!tg.querySelector('.ac4')||tg.querySelector('.ac4').dataset.c==='all'||t.cat===tg.querySelector('.ac4').dataset.c;var mq=t.title.toLowerCase().indexOf(q2)>=0||t.artist.toLowerCase().indexOf(q2)>=0;return mc&&mq});renderL()}
+
+sbn.onclick=function(){searchMusic(ks.value)};
+ks.onkeydown=function(e){if(e.key==='Enter')searchMusic(ks.value)};
+var sT=null;ks.oninput=function(){clearTimeout(sT);sT=setTimeout(function(){searchMusic(ks.value)},500)};
+document.addEventListener('click',function(e){if(!e.target.closest('.sb'))srp.classList.remove('show')});
+plToggle.onclick=function(){plBody.classList.toggle('open');plToggle.innerHTML=(plBody.classList.contains('open')?'&#9660;':'&#9654;')+' 播放列表 <span id="plCount">'+tracks.length+'</span> 首'};
+
+ua.onclick=function(){fi.click()};
+fi.onchange=function(e){handleFiles(e.target.files)};
+ua.ondragover=function(e){e.preventDefault();ua.style.borderColor='var(--tg)'};
+ua.ondragleave=function(){ua.style.borderColor=''};
+ua.ondrop=function(e){e.preventDefault();ua.style.borderColor='';handleFiles(e.dataTransfer.files)};
+async function handleFiles(files){
+for(var i=0;i<files.length;i++){
+var f=files[i];if(!f.type.startsWith('audio/'))continue;
+var url=URL.createObjectURL(f),name=f.name.replace(/\.[^.]+$/,'');
+var cov=null;try{cov=await exCov(f)}catch(e){cov=null}
+tracks.push({title:name,artist:'本地文件',cat:'local',dur:'--:--',color:'#336699',url:url,coverUrl:cov,src:'local',lyrics:[]})}
+filtTracks();em.style.display='none'}
+
+dq.textContent=q[Math.floor(Math.random()*q.length)];renderLyrics([]);filtTracks();
+document.onkeydown=function(e){if(e.target.tagName==='INPUT')return;if(e.code==='Space'){e.preventDefault();togglePlay()}if(e.code==='ArrowRight')playNext();if(e.code==='ArrowLeft')playPrev()};
+})();
+</script>
+</body>
+</html>
+
